@@ -4,21 +4,22 @@
   "parameters": {
     "NomeAKV": {
       "type": "string",
+      "defaultValue": "Gabriel97094",
       "metadata": {
-        "description": "The name of the key vault to be created."
+        "description": "O nome do Key Vault a ser criado."
       }
     },
     "NomeChave": {
       "type": "string",
       "metadata": {
-        "description": "The name of the key to be created."
+        "description": "O nome da chave a ser criada."
       }
     },
     "location": {
       "type": "string",
       "defaultValue": "[resourceGroup().location]",
       "metadata": {
-        "description": "The location of the resources"
+        "description": "A localização dos recursos."
       }
     },
     "skuName": {
@@ -29,12 +30,12 @@
         "premium"
       ],
       "metadata": {
-        "description": "The SKU of the vault to be created."
+        "description": "O SKU do Key Vault a ser criado."
       }
     },
     "keyType": {
       "type": "string",
-      "defaultValue": "RSA", 
+      "defaultValue": "EC",
       "allowedValues": [
         "EC",
         "EC-HSM",
@@ -42,36 +43,42 @@
         "RSA-HSM"
       ],
       "metadata": {
-        "description": "The JsonWebKeyType of the key to be created."
+        "description": "O tipo JsonWebKeyType da chave a ser criada."
       }
     },
     "keyOps": {
       "type": "array",
-      "defaultValue": [["sign", "verify", "encrypt", "decrypt"]], 
-      "allowedValues": ["sign", "verify", "encrypt", "decrypt", " wrapKey", "unwrapKey"],
+      "defaultValue": ["sign", "verify", "encrypt", "decrypt"],
+      "allowedValues": ["sign", "verify", "encrypt", "decrypt", "wrapKey", "unwrapKey"],
       "metadata": {
-        "description": "The permitted JSON web key operations of the key to be created."
+        "description": "As operações JSON web key permitidas da chave a ser criada."
       }
     },
     "keySize": {
       "type": "int",
-      "defaultValue": 2048,
+      "defaultValue": 256,
       "metadata": {
-        "description": "The size in bits of the key to be created."
+        "description": "O tamanho em bits da chave a ser criada."
       }
     },
     "curveName": {
       "type": "string",
-      "defaultValue": "P-521",
+      "defaultValue": "P-256K",
       "allowedValues": [
-        "",
         "P-256",
         "P-256K",
         "P-384",
         "P-521"
       ],
       "metadata": {
-        "description": "The JsonWebKeyCurveName of the key to be created."
+        "description": "O nome da curva da chave a ser criada."
+      }
+    },
+    "softDeleteRetentionInDays": {
+      "type": "int",
+      "defaultValue": 90,
+      "metadata": {
+        "description": "O prazo de retenção em dias para chaves excluídas."
       }
     }
   },
@@ -85,7 +92,7 @@
         "accessPolicies": [],
         "enableRbacAuthorization": true,
         "enableSoftDelete": true,
-        "softDeleteRetentionInDays": "45",
+        "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
         "enabledForDeployment": false,
         "enabledForDiskEncryption": false,
         "enabledForTemplateDeployment": false,
@@ -98,20 +105,22 @@
           "defaultAction": "Allow",
           "bypass": "AzureServices"
         }
-      }
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults/keys",
-      "apiVersion": "2021-11-01-preview",
-      "name": "[format('{0}/{1}', parameters('NomeAKV'), parameters('NomeChave'))]",
-      "properties": {
-        "kty": "[parameters('keyType')]",
-        "keyOps": "[parameters('keyOps')]",
-        "keySize": "[parameters('keySize')]",
-        "curveName": "[parameters('curveName')]"
       },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', parameters('NomeAKV'))]"
+      "resources": [
+        {
+          "type": "keys",
+          "apiVersion": "2021-11-01-preview",
+          "name": "[parameters('NomeChave')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.KeyVault/vaults', parameters('NomeAKV'))]"
+          ],
+          "properties": {
+            "kty": "[parameters('keyType')]",
+            "keyOps": ["sign", "verify"], // Correção aqui
+            "keySize": "[parameters('keySize')]",
+            "curveName": "[parameters('curveName')]"
+          }
+        }
       ]
     }
   ],
